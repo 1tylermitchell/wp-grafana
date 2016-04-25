@@ -12,10 +12,6 @@ Version: 1.0
 Author URI: http://makedatauseful.com/
 */
 
-if(isset($_GET['type']) && $_GET['type'] == 'dashboards'){
-	echo json_encode(get_option('gr_base_url'));
-}
-
 // TODO: Get grafana base url from WP 
 $gr_site = "http://carversvillefarm.landstream.net/grafana/";
 // TODO: Get user/pwd from WP config form
