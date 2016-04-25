@@ -5,7 +5,7 @@
  */
 /*
 Plugin Name: Grafana
-Plugin URI: https://wordpress.org/plugins/grafana/
+Plugin URI: https://wordpress.org/plugins/wp-grafana/
 Description: This plugin allows easy integration of Grafana dashboards and panels into a Wordpress site.
 Author: Tyler Mitchell	
 Version: 1.0
