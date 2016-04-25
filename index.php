@@ -12,6 +12,10 @@ Version: 1.0
 Author URI: http://makedatauseful.com/
 */
 
+if(isset($_GET['type']) && $_GET['type'] == 'dashboards'){
+	echo json_encode(get_option('gr_base_url'));
+}
+
 // TODO: Get grafana base url from WP 
 $gr_site = "http://carversvillefarm.landstream.net/grafana/";
 // TODO: Get user/pwd from WP config form
@@ -149,6 +153,25 @@ function wp_grafana_options(){
 	 
 }
 
+function gr_db_list_func( $atts ){
+	$output = "<h2>Grafana Dashboards</h2></br><b>Source: ".get_option('gr_base_url')."</b>";
+	if ($atts['type'] === "dashboards"){
+		foreach ( grafana_get_dashboards(get_option('gr_base_url')) as $db ){
+			$output .= "<li id=".$db->id.">".$db -> uri."</li>";
+		}
+	} else {
+		$output = "Grafana type: <b> " . $atts['type'] . "</b> is not valid. </br> Select a type: dashboards, panel, etc.";
+	}
+	return $output;
+}
+
+function gr_show_graph_func( $atts ) {
+	return grafana_get_chart(get_option('gr_base_url'), 'db/'.$atts['dashboard'], $atts['panel']);
+}
+
+add_shortcode( 'grafana_list', 'gr_db_list_func' );
+add_shortcode( 'grafana_chart', 'gr_show_graph_func' );
+
 add_action( 'admin_menu', 'grafana_plugin_menu' );
 
 // Get saved option values
@@ -175,4 +198,51 @@ function test(){
 // TODO: Set shortcode action
 //add_action( 'admin_notices', 'hello_dolly' );
 //add_action( 'admin_head', 'dolly_css' );
+
+
+function add_plugin($plugin_array) {
+	$plugin_array['grafana'] = plugins_url( 'js/mcegrafana.js', __FILE__ ); //get_bloginfo('template_url').'/js/mceplugin.js';
+	return $plugin_array;
+}
+
+function register_button($buttons) {
+	array_push($buttons, "grafana");
+	return $buttons;
+}
+
+add_action('init', 'add_button');
+
+function add_button() {
+	if ( current_user_can('edit_posts') &&  current_user_can('edit_pages') )
+	{
+		add_filter('mce_external_plugins', 'add_plugin');
+		add_filter('mce_buttons', 'register_button');
+	}
+}
+
+// Passing vars to Javascript global
+add_action('admin_head','gr_db_list_to_js');
+function gr_db_list_to_js() {
+	$gr_panel_dictionary = array();
+	
+	foreach (grafana_get_dashboards(get_option('gr_base_url')) as $dashboard){
+		$gr_panel_dictionary[$dashboard->title] = array();
+		foreach(grafana_get_dashboard(get_option('gr_base_url'),$dashboard->uri)->dashboard->rows as $row){
+			foreach($row->panels as $panel){
+				array_push($gr_panel_dictionary[$dashboard->title],$panel->title);
+//				$gr_panel_dictionary[$dashboard->title].append($panel->title);
+			}
+		}
+	}
+	
+	
+	?>
+    <script type="text/javascript">
+    var gr_db_list = <?php echo json_encode(grafana_get_dashboards(get_option('gr_base_url'))); ?>;
+    var gr_panel_list = <?php echo json_encode($gr_panel_dictionary); ?>;
+    </script>
+    <?php
+    
+}
+
 
